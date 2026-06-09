@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>GTC · Control Domain Framework</title>
+<title>GTC · Transport Value Chain</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=Inter:wght@400;500&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -218,8 +218,8 @@
 <body>
 
 <div class="topbar">
-  <div class="topbar-title">GTC · Control Domain Framework</div>
-  <div class="topbar-sub">6 control domains · 57 operational tasks · click any task to expand</div>
+  <div class="topbar-title">GTC · Transport Value Chain</div>
+  <div class="topbar-sub">6 value chain items · 57 operational tasks · click any task to expand</div>
   <button class="expand-btn" onclick="openFS()">⤢ Fullscreen</button>
 </div>
 
@@ -239,8 +239,8 @@
 
 <div class="fullscreen-overlay" id="fs">
   <div class="fullscreen-topbar">
-    <div class="topbar-title">GTC · Control Domain Framework</div>
-    <div style="font-size:11px;color:#9BAAB8;margin-left:16px">6 domains · 57 tasks · click to expand</div>
+    <div class="topbar-title">GTC · Transport Value Chain</div>
+    <div style="font-size:11px;color:#9BAAB8;margin-left:16px">6 value chain items · 57 tasks · click to expand</div>
     <button class="close-btn" onclick="closeFS()">✕ Close</button>
   </div>
   <div class="filterbar" id="fb-fs">
@@ -353,7 +353,7 @@ const DOMAINS = [
   },
   {
     num:'06', name:'Performance', color:'#C9A84C', isPerf:true,
-    object:'Measured performance of the whole network vs targets — consumes output of all domains',
+    object:'Measured performance of the whole network vs targets — consumes output of all value chain items',
     agents:['Muneera'], cutLine:'',
     tasks:[
       {title:'Live KPI streams',                   s:'Monitor live KPI streams so I can <em>control surfacing to leadership</em> and report real-time status',                                             a:'Muneera'},
@@ -394,13 +394,13 @@ function buildCanvas(cvId, asId, ns) {
     hdr.className = 'domain-header';
     hdr.style.borderTopColor = domain.color;
     hdr.innerHTML = `
-      <div class="domain-num">DOMAIN ${domain.num}</div>
+      <div class="domain-num">VALUE CHAIN ITEM ${domain.num}</div>
       <div class="domain-name">${nameLines.join('<br>')}</div>
       <div class="domain-object">${domain.object}</div>
       <div class="domain-agent-pills">
         ${domain.agents.map(a=>`<div class="agent-pill" style="background:${AGENTS[a].color}">${a} · ${AGENTS[a].ar}</div>`).join('')}
       </div>
-      ${domain.isPerf?'<div class="perf-note">measures all domains</div>':''}
+      ${domain.isPerf?'<div class="perf-note">measures all value chain items</div>':''}
     `;
     col.appendChild(hdr);
 
