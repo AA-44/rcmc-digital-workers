@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>GTC · Transport Value Chain</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=Inter:wght@400;500&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #F0EDE8;
+    font-family: 'Inter', sans-serif;
+    color: #1A2535;
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: #FFFFFF;
+    border-bottom: 1px solid #E2E0DC;
+    padding: 10px 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .topbar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700;
+    color: #0A1628; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .topbar-sub { font-size: 11px; color: #9BAAB8; margin-left: auto; }
+  .expand-btn {
+    background: #0A1628; color: white; border: none;
+    border-radius: 6px; padding: 5px 12px;
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    cursor: pointer; margin-left: 12px; white-space: nowrap;
+    transition: background .15s;
+  }
+  .expand-btn:hover { background: #1A3A5C; }
+
+  .filterbar {
+    display: flex; gap: 6px; padding: 8px 20px;
+    background: #FFFFFF; border-bottom: 1px solid #E2E0DC;
+    flex-wrap: wrap; align-items: center;
+  }
+  .filter-label {
+    font-size: 9px; color: #9BAAB8;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .08em; text-transform: uppercase; margin-right: 4px;
+  }
+  .filter-btn {
+    font-size: 10px; padding: 4px 11px;
+    border-radius: 999px; border: 1.5px solid #D8D5CF;
+    background: #FFFFFF; color: #1A2535;
+    cursor: pointer; font-family: 'DM Mono', monospace;
+    transition: all .15s; font-weight: 500;
+  }
+  .filter-btn:hover { background: #E8E5DF; }
+  .filter-btn.active { color: white !important; border-color: transparent; }
+  .sep { width: 1px; height: 16px; background: #D8D5CF; margin: 0 4px; }
+
+  .fullscreen-overlay {
+    display: none; position: fixed; inset: 0;
+    background: #F0EDE8; z-index: 9999;
+    overflow: auto; flex-direction: column;
+  }
+  .fullscreen-overlay.open { display: flex; }
+  .fullscreen-topbar {
+    position: sticky; top: 0;
+    background: #FFFFFF; border-bottom: 1px solid #E2E0DC;
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+    z-index: 10; flex-shrink: 0;
+  }
+  .close-btn {
+    background: #C0392B; color: white; border: none;
+    border-radius: 6px; padding: 5px 12px;
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    cursor: pointer; margin-left: auto;
+  }
+  .close-btn:hover { background: #992B1F; }
+
+  .canvas-wrap { overflow-x: auto; flex: 1; }
+  .canvas {
+    display: flex; gap: 0;
+    padding: 20px; min-width: max-content; align-items: flex-start;
+  }
+
+  .domain-col {
+    width: 280px; flex-shrink: 0; margin-right: 10px;
+    transition: opacity .2s;
+  }
+  .domain-col.dimmed { opacity: 0.18; }
+
+  .domain-header {
+    border-radius: 8px 8px 0 0;
+    padding: 13px 13px 11px;
+    background: white;
+    border: 1px solid #E2E0DC;
+    border-top-width: 3px; border-bottom: none;
+    position: relative;
+  }
+  .domain-num {
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    color: #9BAAB8; margin-bottom: 4px; letter-spacing: .12em;
+  }
+  .domain-name {
+    font-family: 'Syne', sans-serif; font-size: 15px;
+    font-weight: 700; color: #0A1628; line-height: 1.2; margin-bottom: 6px;
+  }
+  .domain-object {
+    font-size: 9px; color: #6B7A8D; line-height: 1.45; font-style: italic;
+  }
+  .domain-agent-pills {
+    display: flex; gap: 4px; margin-top: 9px; flex-wrap: wrap;
+  }
+  .agent-pill {
+    font-size: 8px; padding: 2px 7px; border-radius: 999px;
+    font-weight: 600; color: white; font-family: 'DM Mono', monospace;
+  }
+  .perf-note {
+    position: absolute; top: 8px; right: 8px; font-size: 7.5px;
+    border: 1px solid #C9A84C88; color: #B07D2C;
+    background: #FDF8EE; padding: 2px 5px; border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .domain-toggle {
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 4px 8px;
+    background: #F8F6F3;
+    border: 1px solid #E2E0DC; border-top: none; border-bottom: none;
+    cursor: pointer;
+  }
+  .domain-toggle span {
+    font-size: 8.5px; color: #9BAAB8;
+    font-family: 'DM Mono', monospace; letter-spacing: .04em;
+  }
+  .domain-toggle:hover span { color: #4A5568; }
+
+  .tasks { display: flex; flex-direction: column; }
+
+  .task-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E0DC;
+    border-top: none; border-left-width: 3px;
+    transition: background .12s;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .task-card:last-child { border-radius: 0 0 6px 6px; }
+  .task-card.hidden { display: none; }
+
+  .task-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+  }
+  .task-dot {
+    width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+  }
+  .task-title {
+    font-size: 10px; font-weight: 500; color: #1A2535;
+    line-height: 1.35; flex: 1;
+  }
+  .task-chevron {
+    font-size: 9px; color: #C8C4BC; flex-shrink: 0;
+    transition: transform .2s;
+  }
+  .task-card.expanded .task-chevron { transform: rotate(180deg); }
+
+  .task-detail {
+    max-height: 0; overflow: hidden;
+    transition: max-height .25s ease;
+    background: #F8F6F3;
+    border-top: 1px dashed #E2E0DC;
+  }
+  .task-card.expanded .task-detail { max-height: 200px; }
+  .task-detail-inner {
+    padding: 8px 10px 9px 23px;
+    font-size: 9.5px; line-height: 1.6; color: #4A5568;
+  }
+  .task-detail-inner em {
+    color: #0A1628; font-style: normal; font-weight: 500;
+  }
+  .task-agent-row {
+    display: flex; align-items: center; gap: 4px; margin-top: 5px;
+  }
+  .task-agent-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .task-agent-name { font-size: 8px; font-family: 'DM Mono', monospace; color: #9BAAB8; }
+
+  .mece-boundary {
+    writing-mode: vertical-rl; font-size: 7px; color: #C8C4BC;
+    align-self: stretch; display: flex; align-items: center;
+    padding: 0 4px; border-left: 1px dashed #D8D5CF;
+    margin-right: 4px; font-family: 'DM Mono', monospace;
+    cursor: help; min-height: 200px;
+  }
+
+  .agent-strip {
+    display: flex; gap: 6px; padding: 12px 20px;
+    background: #FFFFFF; border-top: 1px solid #E2E0DC;
+    flex-wrap: wrap; position: sticky; bottom: 0; flex-shrink: 0;
+  }
+  .agent-card {
+    flex: 1; min-width: 110px; padding: 9px 11px;
+    border-radius: 7px; background: #F8F6F3;
+    border: 1.5px solid #E2E0DC; transition: all .15s; cursor: pointer;
+  }
+  .agent-card:hover { background: #EFEDE8; }
+  .agent-name-en { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; }
+  .agent-name-ar { font-size: 13px; font-weight: 600; direction: rtl; margin-top: 1px; }
+  .agent-role { font-size: 8px; color: #9BAAB8; margin-top: 3px; line-height: 1.3; }
+  .agent-meta { display: flex; gap: 3px; margin-top: 6px; flex-wrap: wrap; }
+  .agent-meta-tag {
+    font-size: 7.5px; padding: 1px 5px; border-radius: 3px;
+    background: #E8E5DF; color: #6B7A8D; font-family: 'DM Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">GTC · Transport Value Chain</div>
+  <div class="topbar-sub">6 value chain items · 57 operational tasks · click any task to expand</div>
+  <button class="expand-btn" onclick="openFS()">⤢ Fullscreen</button>
+</div>
+
+<div class="filterbar" id="fb-main">
+  <span class="filter-label">Filter by agent</span>
+  <button class="filter-btn active" style="background:#0A1628;color:white;border-color:#0A1628" onclick="filterAll(this,'main')">All</button>
+  <div class="sep"></div>
+  <button class="filter-btn" onclick="filterAgent('Rashid',this,'main')">Rashid · راشد</button>
+  <button class="filter-btn" onclick="filterAgent('Salma',this,'main')">Salma · سلمى</button>
+  <button class="filter-btn" onclick="filterAgent('Ameen',this,'main')">Ameen · أمين</button>
+  <button class="filter-btn" onclick="filterAgent('Haris',this,'main')">Haris · حارس</button>
+  <button class="filter-btn" onclick="filterAgent('Mashaer',this,'main')">Mashaer · مشاعر</button>
+  <button class="filter-btn" onclick="filterAgent('Muneera',this,'main')">Muneera · منيرة</button>
+</div>
+<div class="canvas-wrap"><div class="canvas" id="cv-main"></div></div>
+<div class="agent-strip" id="as-main"></div>
+
+<div class="fullscreen-overlay" id="fs">
+  <div class="fullscreen-topbar">
+    <div class="topbar-title">GTC · Transport Value Chain</div>
+    <div style="font-size:11px;color:#9BAAB8;margin-left:16px">6 value chain items · 57 tasks · click to expand</div>
+    <button class="close-btn" onclick="closeFS()">✕ Close</button>
+  </div>
+  <div class="filterbar" id="fb-fs">
+    <span class="filter-label">Filter by agent</span>
+    <button class="filter-btn active" style="background:#0A1628;color:white;border-color:#0A1628" onclick="filterAll(this,'fs')">All</button>
+    <div class="sep"></div>
+    <button class="filter-btn" onclick="filterAgent('Rashid',this,'fs')">Rashid · راشد</button>
+    <button class="filter-btn" onclick="filterAgent('Salma',this,'fs')">Salma · سلمى</button>
+    <button class="filter-btn" onclick="filterAgent('Ameen',this,'fs')">Ameen · أمين</button>
+    <button class="filter-btn" onclick="filterAgent('Haris',this,'fs')">Haris · حارس</button>
+    <button class="filter-btn" onclick="filterAgent('Mashaer',this,'fs')">Mashaer · مشاعر</button>
+    <button class="filter-btn" onclick="filterAgent('Muneera',this,'fs')">Muneera · منيرة</button>
+  </div>
+  <div class="canvas-wrap" style="flex:1"><div class="canvas" id="cv-fs"></div></div>
+  <div class="agent-strip" id="as-fs"></div>
+</div>
+
+<script>
+const AGENTS = {
+  Rashid:  {color:'#0F6E56',ar:'راشد', role:'Fleet Management Specialist',    mcr:'Primarily Control', tasks:0},
+  Salma:   {color:'#185FA5',ar:'سلمى', role:'Computer Vision Specialist',     mcr:'Purely Monitor',    tasks:0},
+  Ameen:   {color:'#C0392B',ar:'أمين', role:'Performance & Response Monitor', mcr:'Monitor + Report',  tasks:0},
+  Haris:   {color:'#B07D2C',ar:'حارس', role:'Driver Compliance Monitor',      mcr:'Monitor + Control', tasks:0},
+  Mashaer: {color:'#534AB7',ar:'مشاعر',role:'Emotion & Sentiment Analyst',    mcr:'Purely Monitor',    tasks:0},
+  Muneera: {color:'#C9A84C',ar:'منيرة',role:'Performance Excellence Analyst', mcr:'Purely Report',     tasks:0},
+};
+
+const DOMAINS = [
+  {
+    num:'01', name:'Capacity\n& Access', color:'#0F6E56',
+    object:'Available supply positioned against live demand — across every mode',
+    agents:['Rashid'], cutLine:'Having/positioning the resource vs the resource moving',
+    tasks:[
+      {title:'Transit demand by station',         s:'Monitor public-transit demand by station so I can <em>control fleet distribution</em> and report supply–demand mismatch',                              a:'Rashid'},
+      {title:'Vehicle availability across depots', s:'Monitor vehicle availability across depots so I can <em>control allocation</em> and report fleet shortages',                                          a:'Rashid'},
+      {title:'Real-time fleet positioning',        s:'Monitor fleet positioning in real time so I can <em>control rebalancing</em> and report coverage gaps',                                               a:'Rashid'},
+      {title:'Route-level capacity',               s:'Monitor route-level capacity so I can <em>control vehicle assignment</em> and report overloaded routes',                                              a:'Rashid'},
+      {title:'Ride-hailing supply vs demand',      s:'Monitor ride-hailing driver supply against request density so I can <em>control positioning signals</em> and report undersupplied zones',             a:'Rashid'},
+      {title:'Micro-mobility dock availability',   s:'Monitor micro-mobility availability across docks so I can <em>control redistribution</em> and report depleted or saturated points',                   a:'Rashid'},
+      {title:'Parking-facility occupancy',         s:'Monitor parking-facility occupancy so I can <em>control overflow routing</em> and report saturated facilities',                                       a:'Rashid'},
+      {title:'External-inflow vs ground capacity', s:'Monitor external-inflow volume against ground absorption so I can <em>control arrival staging</em> and report capacity strain',                       a:'Rashid'},
+      {title:'Peak-load transitions',              s:'Monitor peak-load transitions so I can <em>control surge response</em> and report capacity strain',                                                   a:'Rashid'},
+    ]
+  },
+  {
+    num:'02', name:'Network\nFlow', color:'#185FA5',
+    object:'The movement of people and vehicles through the network',
+    agents:['Ameen','Salma'], cutLine:'Planned vs unplanned — Flow is normal-state; Incidents is disruption',
+    tasks:[
+      {title:'Effective speed across routes',      s:'Monitor effective speed across transit routes so I can <em>control flow interventions</em> and report slowdowns',                                     a:'Ameen'},
+      {title:'Service punctuality',                s:'Monitor service punctuality so I can <em>control schedule correction</em> and report delays',                                                         a:'Ameen'},
+      {title:'Journey times across modes',         s:'Monitor journey times across modes so I can <em>control deviation response</em> and report routes slipping their target',                             a:'Ameen'},
+      {title:'Station dwell & headway patterns',   s:'Monitor station dwell and headway patterns so I can <em>control flow smoothing</em> and report congestion points',                                    a:'Rashid'},
+      {title:'Pedestrian crowd movement',          s:'Monitor pedestrian crowd movement and density so I can <em>control flow signals</em> and report build-up',                                           a:'Salma'},
+      {title:'Road & corridor occupancy',          s:'Monitor road and corridor occupancy on camera so I can <em>control flow assessment</em> and report blockages',                                       a:'Salma'},
+      {title:'Queue formation at platforms',       s:'Monitor queue formation at platforms and gates so I can <em>control flow management</em> and report abnormal queuing',                               a:'Salma'},
+      {title:'Interchange & transfer congestion',  s:'Monitor interchange and transfer congestion so I can <em>control crowd routing</em> and report bottlenecks at transfer points',                      a:'Salma'},
+    ]
+  },
+  {
+    num:'03', name:'Safety &\nIncidents', color:'#C0392B',
+    object:'Unplanned events, hazards, breakdowns, emergencies',
+    agents:['Ameen','Salma'], cutLine:'Event vs rule-break — a breakdown is an incident; an unauthorized route is compliance',
+    tasks:[
+      {title:'Live operational feed monitoring',   s:'Monitor live operational feeds so I can <em>control incident response</em> and report breakdowns the moment they occur',                              a:'Ameen'},
+      {title:'Detection-to-resolution tracking',   s:'Monitor incident detection-to-resolution so I can <em>control escalation timing</em> and report SLA breaches',                                      a:'Ameen'},
+      {title:'Recurring incident patterns',        s:'Monitor recurring incident patterns so I can <em>control proactive positioning</em> and report emerging hotspots',                                   a:'Ameen'},
+      {title:'Field-staff response status',        s:'Monitor field-staff response status so I can <em>control task assignment</em> and report unattended incidents',                                      a:'Ameen'},
+      {title:'Event severity classification',      s:'Monitor event severity so I can <em>control prioritization</em> and report critical events first',                                                   a:'Ameen'},
+      {title:'Cross-incident dependencies',        s:'Monitor cross-incident dependencies so I can <em>control cascading effects</em> and report linked disruptions',                                      a:'Ameen'},
+      {title:'External-inflow disruptions',        s:'Monitor external-inflow disruptions so I can <em>control downstream ground response</em> and report knock-on effects',                               a:'Ameen'},
+      {title:'Stranded & abandoned vehicles',      s:'Monitor stranded or abandoned vehicles on camera so I can <em>control recovery dispatch</em> and report obstructions',                               a:'Salma'},
+      {title:'Crowd-crush risk on visual feeds',   s:'Monitor crowd-crush risk on visual feeds so I can <em>control early warning</em> and report dangerous density',                                     a:'Salma'},
+      {title:'Hazardous event classification',     s:'Monitor hazardous events in real time so I can <em>control automated classification</em> and report event types',                                   a:'Salma'},
+      {title:'Camera-feed health',                 s:'Monitor camera-feed health so I can <em>control blind-spot risk</em> and report failed feeds',                                                       a:'Salma'},
+    ]
+  },
+  {
+    num:'04', name:'Compliance', color:'#B07D2C',
+    object:'The delta between the approved plan and actual behavior',
+    agents:['Haris'], cutLine:'Binary vs continuous — did they follow (yes/no) vs how well are we doing (delta)',
+    tasks:[
+      {title:'Operator route execution',           s:'Monitor operator route execution so I can <em>control compliance flags</em> and report unauthorized route changes',                                   a:'Haris'},
+      {title:'Schedule adherence',                 s:'Monitor schedule adherence so I can <em>control timing alerts</em> and report early or late departures',                                             a:'Haris'},
+      {title:'Dispatch-command compliance',        s:'Monitor dispatch-command compliance so I can <em>control enforcement</em> and report ignored instructions',                                          a:'Haris'},
+      {title:'Stop-sequence execution',            s:'Monitor stop-sequence execution so I can <em>control verification</em> and report skipped or added stops',                                          a:'Haris'},
+      {title:'Assigned vs actual route mapping',   s:'Monitor assigned-vs-actual route mapping so I can <em>control mismatch detection</em> and report drift',                                            a:'Haris'},
+      {title:'Ride-hailing operating compliance',  s:'Monitor ride-hailing operating compliance so I can <em>control enforcement flags</em> and report zone or authorization violations',                  a:'Haris'},
+      {title:'Parking & restricted-zone violations',s:'Monitor parking and restricted-zone violations so I can <em>control enforcement</em> and report illegal stopping or entry',                        a:'Haris'},
+      {title:'Repeated compliance failures',       s:'Monitor repeated compliance failures so I can <em>control pattern flags</em> and report habitual offenders',                                        a:'Haris'},
+      {title:'Compliance evidence trails',         s:'Monitor compliance evidence trails so I can <em>control accountability</em> and report audit-ready records',                                        a:'Haris'},
+    ]
+  },
+  {
+    num:'05', name:'Public\nExperience', color:'#534AB7',
+    object:'What the public knows, feels, and reports — across all modes',
+    agents:['Mashaer'], cutLine:'',
+    tasks:[
+      {title:'Social media monitoring',            s:'Monitor social media channels so I can <em>control early issue detection</em> and report emerging concerns',                                          a:'Mashaer'},
+      {title:'Opinion polls & surveys',            s:'Monitor opinion polls and surveys so I can <em>control sentiment tracking</em> and report satisfaction levels',                                      a:'Mashaer'},
+      {title:'Evaluation & feedback channels',     s:'Monitor evaluation and feedback channels so I can <em>control trend detection</em> and report shifts in public mood',                                a:'Mashaer'},
+      {title:'Sentiment by service aspect',        s:'Monitor sentiment by service aspect so I can <em>control targeted alerts</em> and report problem areas',                                            a:'Mashaer'},
+      {title:'Sentiment spikes',                   s:'Monitor sentiment spikes so I can <em>control rapid flagging</em> and report sudden negativity',                                                     a:'Mashaer'},
+      {title:'Recurring complaint themes',         s:'Monitor recurring complaint themes so I can <em>control prioritization</em> and report top grievances',                                             a:'Mashaer'},
+      {title:'Sentiment by location & mode',       s:'Monitor sentiment by location and mode so I can <em>control geographic flags</em> and report localized dissatisfaction',                            a:'Mashaer'},
+      {title:'Perception of recent changes',       s:'Monitor perception of recent changes so I can <em>control narrative response</em> and report reception of updates',                                 a:'Mashaer'},
+      {title:'Early-warning sentiment signals',    s:'Monitor early-warning sentiment signals so I can <em>control preemptive alerts</em> and report risks before escalation',                            a:'Mashaer'},
+      {title:'Positive sentiment drivers',         s:'Monitor positive sentiment drivers so I can <em>control reinforcement</em> and report what is working',                                             a:'Mashaer'},
+    ]
+  },
+  {
+    num:'06', name:'Performance', color:'#C9A84C', isPerf:true,
+    object:'Measured performance of the whole network vs targets — consumes output of all value chain items',
+    agents:['Muneera'], cutLine:'',
+    tasks:[
+      {title:'Live KPI streams',                   s:'Monitor live KPI streams so I can <em>control surfacing to leadership</em> and report real-time status',                                             a:'Muneera'},
+      {title:'Performance vs targets',             s:'Monitor performance against targets so I can <em>control alert thresholds</em> and report deltas from plan',                                        a:'Muneera'},
+      {title:'Network throughput',                 s:'Monitor network throughput so I can <em>control capacity flags</em> and report utilization levels',                                                  a:'Muneera'},
+      {title:'Fleet & asset utilization',          s:'Monitor fleet and asset utilization so I can <em>control efficiency signals</em> and report underused resources',                                   a:'Muneera'},
+      {title:'Data trust & freshness',             s:'Monitor data trust and freshness so I can <em>control which KPIs display</em> and report stale feeds',                                              a:'Muneera'},
+      {title:'Periodic performance windows',       s:'Monitor periodic performance windows so I can <em>control summary generation</em> and report executive digests',                                    a:'Muneera'},
+      {title:'Trend direction',                    s:'Monitor trend direction so I can <em>control early-warning flags</em> and report degrading metrics',                                                a:'Muneera'},
+      {title:'Threshold breaches',                 s:'Monitor threshold breaches so I can <em>control attention routing</em> and report breaches by severity',                                            a:'Muneera'},
+      {title:'Raw data ingestion',                 s:'Monitor raw data ingestion so I can <em>control transformation into insight</em> and report processed dashboards',                                  a:'Muneera'},
+      {title:'Cross-KPI correlations',             s:'Monitor cross-KPI correlations so I can <em>control root-cause framing</em> and report linked shifts',                                             a:'Muneera'},
+      {title:'Reporting cadence',                  s:'Monitor reporting cadence so I can <em>control delivery timing</em> and report on-schedule summaries',                                             a:'Muneera'},
+    ]
+  }
+];
+
+DOMAINS.forEach(d => d.tasks.forEach(t => { if(AGENTS[t.a]) AGENTS[t.a].tasks++; }));
+
+function buildCanvas(cvId, asId, ns) {
+  const cv = document.getElementById(cvId);
+  cv.innerHTML = '';
+
+  DOMAINS.forEach((domain, di) => {
+    if (di > 0 && DOMAINS[di-1].cutLine) {
+      const b = document.createElement('div');
+      b.className = 'mece-boundary';
+      b.title = DOMAINS[di-1].cutLine;
+      b.textContent = '· · ·';
+      cv.appendChild(b);
+    }
+
+    const col = document.createElement('div');
+    col.className = 'domain-col';
+
+    const nameLines = domain.name.split('\n');
+    const hdr = document.createElement('div');
+    hdr.className = 'domain-header';
+    hdr.style.borderTopColor = domain.color;
+    hdr.innerHTML = `
+      <div class="domain-num">VALUE CHAIN ITEM ${domain.num}</div>
+      <div class="domain-name">${nameLines.join('<br>')}</div>
+      <div class="domain-object">${domain.object}</div>
+      <div class="domain-agent-pills">
+        ${domain.agents.map(a=>`<div class="agent-pill" style="background:${AGENTS[a].color}">${a} · ${AGENTS[a].ar}</div>`).join('')}
+      </div>
+      ${domain.isPerf?'<div class="perf-note">measures all value chain items</div>':''}
+    `;
+    col.appendChild(hdr);
+
+    const toggle = document.createElement('div');
+    toggle.className = 'domain-toggle';
+    toggle.innerHTML = `<span>expand all</span>`;
+    let allOpen = false;
+    toggle.onclick = () => {
+      allOpen = !allOpen;
+      col.querySelectorAll('.task-card').forEach(c => c.classList.toggle('expanded', allOpen));
+      toggle.querySelector('span').textContent = allOpen ? 'collapse all' : 'expand all';
+    };
+    col.appendChild(toggle);
+
+    const tasks = document.createElement('div');
+    tasks.className = 'tasks';
+
+    domain.tasks.forEach(task => {
+      const card = document.createElement('div');
+      card.className = 'task-card';
+      card.dataset.agent = task.a;
+      card.style.borderLeftColor = AGENTS[task.a].color;
+      card.innerHTML = `
+        <div class="task-header">
+          <div class="task-dot" style="background:${AGENTS[task.a].color}"></div>
+          <div class="task-title">${task.title}</div>
+          <div class="task-chevron">▾</div>
+        </div>
+        <div class="task-detail">
+          <div class="task-detail-inner">
+            ${task.s}
+            <div class="task-agent-row">
+              <div class="task-agent-dot" style="background:${AGENTS[task.a].color}"></div>
+              <div class="task-agent-name">${task.a} · ${AGENTS[task.a].ar}</div>
+            </div>
+          </div>
+        </div>
+      `;
+      card.querySelector('.task-header').onclick = () => card.classList.toggle('expanded');
+      tasks.appendChild(card);
+    });
+
+    col.appendChild(tasks);
+    cv.appendChild(col);
+  });
+
+  buildStrip(asId, cvId, ns);
+}
+
+function buildStrip(asId, cvId, ns) {
+  const strip = document.getElementById(asId);
+  strip.innerHTML = '';
+  Object.entries(AGENTS).forEach(([name, ag]) => {
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+    card.innerHTML = `
+      <div class="agent-name-en" style="color:${ag.color}">${name}</div>
+      <div class="agent-name-ar" style="color:${ag.color}">${ag.ar}</div>
+      <div class="agent-role">${ag.role}</div>
+      <div class="agent-meta">
+        <span class="agent-meta-tag">${ag.tasks} tasks</span>
+        <span class="agent-meta-tag">${ag.mcr}</span>
+      </div>
+    `;
+    card.onclick = () => {
+      const isActive = card.style.borderColor === ag.color;
+      strip.querySelectorAll('.agent-card').forEach(c => c.style.borderColor='#E2E0DC');
+      if (isActive) filterAll(null, ns, true);
+      else { card.style.borderColor = ag.color; filterAgent(name, null, ns, true); }
+    };
+    strip.appendChild(card);
+  });
+}
+
+function filterAll(btn, ns, fromCard=false) {
+  const fbId=`fb-${ns}`; const cvId=`cv-${ns}`;
+  if (!fromCard) {
+    document.querySelectorAll(`#${fbId} .filter-btn`).forEach(b => {
+      b.classList.remove('active'); b.style.background=''; b.style.color=''; b.style.borderColor='';
+    });
+    if (btn) { btn.classList.add('active'); btn.style.background='#0A1628'; btn.style.color='white'; btn.style.borderColor='#0A1628'; }
+    document.querySelectorAll(`#as-${ns} .agent-card`).forEach(c => c.style.borderColor='#E2E0DC');
+  }
+  document.querySelectorAll(`#${cvId} .task-card`).forEach(c => c.classList.remove('hidden'));
+  document.querySelectorAll(`#${cvId} .domain-col`).forEach(c => c.classList.remove('dimmed'));
+}
+
+function filterAgent(agent, btn, ns, fromCard=false) {
+  const fbId=`fb-${ns}`; const cvId=`cv-${ns}`; const ag=AGENTS[agent];
+  if (!fromCard) {
+    document.querySelectorAll(`#${fbId} .filter-btn`).forEach(b => {
+      b.classList.remove('active'); b.style.background=''; b.style.color=''; b.style.borderColor='';
+    });
+    if (btn) { btn.classList.add('active'); btn.style.background=ag.color; btn.style.color='white'; btn.style.borderColor=ag.color; }
+  }
+  document.querySelectorAll(`#${cvId} .task-card`).forEach(card => {
+    card.classList.toggle('hidden', card.dataset.agent !== agent);
+  });
+  document.querySelectorAll(`#${cvId} .domain-col`).forEach(col => {
+    const has = [...col.querySelectorAll('.task-card')].some(c => !c.classList.contains('hidden'));
+    col.classList.toggle('dimmed', !has);
+  });
+}
+
+function openFS() {
+  document.getElementById('fs').classList.add('open');
+  if (!document.getElementById('cv-fs').children.length) buildCanvas('cv-fs','as-fs','fs');
+}
+function closeFS() { document.getElementById('fs').classList.remove('open'); }
+
+buildCanvas('cv-main','as-main','main');
+</script>
+</body>
+</html>
