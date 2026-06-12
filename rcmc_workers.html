@@ -164,18 +164,10 @@ const AGENTS = [
   {
     id: "muneera", name: "Muneera", role: "Reporting & Performance Intelligence", badge: "",
     groups: [
-      { label: "Operational reporting", sublabel: null, tasks: [
-        "Generates shift reports summarizing events, alerts, and resolutions across all agents",
-        "Produces corridor and route performance summaries by time period",
-        "Delivers on-time rate, fleet availability, and incident response time reports on demand"
-      ]},
-      { label: "KPI & SLA tracking", sublabel: null, tasks: [
-        "Tracks performance against defined KPIs and SLAs across all operational domains",
-        "Flags KPI breaches and SLA violations with context and contributing factors"
-      ]},
-      { label: "Cross-agent synthesis", sublabel: null, tasks: [
-        "Aggregates outputs from all five agents into a unified performance picture",
-        "Surfaces patterns no single agent can see alone, for example correlating bunching data with complaint spikes."
+      { label: "Reporting", sublabel: null, tasks: [
+        "Generates live operational reports on demand from any agent or all agents combined",
+        "Produces shift summaries covering alerts, incidents, fleet performance and public sentiment",
+        "Delivers scheduled reports to GTC leadership without manual input"
       ]},
       { label: "Open question", sublabel: "Unresolved. Decision point before build.", warning: true, tasks: [
         "There is an open question about whether Muneera as a reporting agent is the right architectural choice. An alternative direction raised during design: reporting as a conversational capability built into the C&C chat interface, where operators tag agents directly — @Rashid how many ghost buses on Route 7 today? or @all give me a status summary, and each agent responds in context. Under that model, Muneera becomes redundant and reporting is distributed across all agents rather than centralized. This has not been resolved yet."
