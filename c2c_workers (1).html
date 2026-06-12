@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCMC Digital Workers — GTC Makkah</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #F0EDE8; color: #1a1a1a; height: 100vh; overflow: hidden; user-select: none; }
+  #topbar { position: fixed; top: 0; left: 0; right: 0; height: 52px; background: #FFFFFF; border-bottom: 1px solid #E2E0DC; display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 100; }
+  #topbar .title { font-size: 13px; font-weight: 600; color: #1a1a1a; letter-spacing: 0.02em; }
+  #topbar .spacer { flex: 1; }
+  #canvas { position: fixed; top: 52px; left: 0; right: 0; bottom: 0; overflow: auto; }
+  #canvas-inner { position: relative; width: 1800px; min-height: 900px; padding: 48px 40px 80px; display: flex; gap: 20px; align-items: flex-start; }
+  .agent-col { flex: 0 0 270px; display: flex; flex-direction: column; }
+  .agent-header { border-radius: 12px 12px 0 0; padding: 16px 18px 14px; position: relative; background: #FFFFFF; border-bottom: 1px solid #E2E0DC; }
+  .agent-name { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; margin-bottom: 3px; }
+  .agent-role { font-size: 11px; font-weight: 500; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.08em; }
+  .agent-badge { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .task-list { background: #FFFFFF; border-left: 1px solid #E2E0DC; border-right: 1px solid #E2E0DC; padding: 10px 10px 6px; min-height: 200px; display: flex; flex-direction: column; gap: 5px; }
+  .task-group-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #9a9690; padding: 8px 6px 4px; }
+  .task-item { background: #F8F6F3; border: 1px solid #E2E0DC; border-radius: 8px; padding: 9px 10px; font-size: 12px; color: #3a3835; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px; position: relative; }
+  .task-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .task-text { flex: 1; }
+  .add-task-footer { background: #FFFFFF; border: 1px solid #E2E0DC; border-top: none; border-radius: 0 0 12px 12px; padding: 8px 10px 10px; }
+  .ameen .agent-header { background: #FFFFFF; border: 1px solid #C0392B; border-bottom: none; }
+  .ameen .agent-name { color: #c96b63; }
+  .ameen .agent-badge { background: #fdf0ef; color: #C0392B; border: 1px solid #C0392B; }
+  .ameen .task-dot { background: #C0392B; }
+  .salma .agent-header { background: #FFFFFF; border: 1px solid #185FA5; border-bottom: none; }
+  .salma .agent-name { color: #4a8fc7; }
+  .salma .agent-badge { background: #edf3fb; color: #185FA5; border: 1px solid #185FA5; }
+  .salma .task-dot { background: #185FA5; }
+  .rashid .agent-header { background: #FFFFFF; border: 1px solid #0F6E56; border-bottom: none; }
+  .rashid .agent-name { color: #2a9e7e; }
+  .rashid .agent-badge { background: #eaf4f1; color: #0F6E56; border: 1px solid #0F6E56; }
+  .rashid .task-dot { background: #0F6E56; }
+  .mashaer .agent-header { background: #FFFFFF; border: 1px solid #534AB7; border-bottom: none; }
+  .mashaer .agent-name { color: #7b74d4; }
+  .mashaer .agent-badge { background: #f0eefb; color: #534AB7; border: 1px solid #534AB7; }
+  .mashaer .task-dot { background: #534AB7; }
+  .haris .agent-header { background: #FFFFFF; border: 1px solid #B07D2C; border-bottom: none; }
+  .haris .agent-name { color: #c99a4a; }
+  .haris .agent-badge { background: #fdf5e8; color: #B07D2C; border: 1px solid #B07D2C; }
+  .haris .task-dot { background: #B07D2C; }
+  .muneera .agent-header { background: #FFFFFF; border: 1px solid #C9A84C; border-bottom: none; }
+  .muneera .agent-name { color: #b89a3a; }
+  .muneera .agent-badge { background: #fdf8e8; color: #9a7a20; border: 1px solid #C9A84C; }
+  .muneera .task-dot { background: #C9A84C; }
+  .warning-task { background: #FDF8EE !important; border-color: #C9A84C !important; }
+  .warning-task .task-text { color: #8a6a10 !important; font-style: italic; }
+  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+  #modal-overlay.open { display: flex; }
+  #modal { background: #1e1e22; border: 1px solid #333; border-radius: 14px; padding: 24px; width: 380px; display: flex; flex-direction: column; gap: 14px; }
+  #modal h3 { font-size: 14px; font-weight: 600; color: #e8e6e0; }
+  #modal textarea { background: #141416; border: 1px solid #333; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #e8e6e0; font-family: inherit; line-height: 1.5; resize: none; height: 80px; outline: none; width: 100%; }
+  #modal textarea:focus { border-color: #555; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s; }
+  .modal-btn:hover { opacity: 0.85; }
+  .modal-btn.cancel { background: #2a2a2e; color: #999; }
+  .modal-btn.save { background: #4a3878; color: #c4b0f5; }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #2a2a2e; border: 1px solid #3a3a40; border-radius: 8px; padding: 8px 16px; font-size: 12px; color: #aaa; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 300; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div class="title">RCMC Digital Workers</div>
+  
+  <div class="spacer"></div>
+  
+</div>
+<div id="canvas"><div id="canvas-inner"></div></div>
+
+<div id="toast"></div>
+<script>
+const AGENTS = [
+  {
+    id: "ameen", name: "Ameen", role: "Alert Management", badge: "",
+    groups: [
+      { label: "Alert intake", sublabel: null, tasks: [
+        "Receives incoming alerts from all agents: Salma, Rashid, Mashaer, Haris (Muneera?)",
+        "Suppresses duplicate or redundant alerts about the same event (e.g. Medani, EVC, DAIF, CRM)"
+      ]},
+      { label: "Prioritization", sublabel: "based on defined SLAs and SOPs", tasks: [
+        "Classifies alerts by severity: critical, high, medium, low",
+        "Automatic escalation based on SLAs and SOPs"
+      ]},
+      { label: "Assignment & logging", sublabel: null, tasks: [
+        "Assigns each alert to the right operator or response team",
+        "Full alert lifecycle audit trail covering trigger, assignment, acknowledgment and resolution. Timestamped and agent-attributed."
+      ]}
+    ]
+  },
+  {
+    id: "salma", name: "Salma", role: "Computer Vision", badge: "",
+    groups: [
+      { label: "Station operations", sublabel: null, tasks: [
+        "Station cleanliness monitoring",
+        "Asset health status check",
+        "Wait time monitoring from passenger arrival at stop to boarding."
+      ]},
+      { label: "Access & compliance", sublabel: null, tasks: [
+        "Unauthorized pedestrian access to restricted areas",
+        "Vehicle classification and unauthorized access detection in restricted zones"
+      ]},
+      { label: "Counting & density", sublabel: null, tasks: [
+        "People density monitoring at stations and stops",
+        "Vehicle count at stations"
+      ]}
+    ]
+  },
+  {
+    id: "rashid", name: "Rashid", role: "Fleet Performance", badge: "",
+    groups: [
+      { label: "Route deviation", sublabel: null, tasks: [
+        "Bus deviation from assigned route. Covers unplanned shortcuts and wrong roads."
+      ]},
+      { label: "Schedule performance", sublabel: null, tasks: [
+        "Bus running late beyond acceptable threshold (e.g. 5 min)",
+        "Bus running early, arriving before scheduled time.",
+        "Bus bunching: two or more buses arriving together on the same route.",
+        "Ghost bus: bus is tracked but never departs as scheduled."
+      ]},
+      { label: "Stop & fleet compliance", sublabel: null, tasks: [
+        "Bus skipping scheduled stops without a recorded reason",
+        "Excessive dwell time at a stop causing cascading delays",
+        "Active fleet count drops below scheduled count on a corridor"
+      ]}
+    ]
+  },
+  {
+    id: "mashaer", name: "Mashaer", role: "Sentiment Analysis", badge: "",
+    groups: [
+      { label: "Detection", sublabel: null, tasks: [
+        "Real-time sentiment spike detection across social media and official complaint channels",
+        "Viral complaint identification before escalation to official channels"
+      ]},
+      { label: "Pattern recognition", sublabel: null, tasks: [
+        "Recurring complaint patterns by route, time, or stop",
+        "Overcrowding and heat exposure signals. Hajj critical."
+      ]},
+      { label: "Trending & correlation", sublabel: null, tasks: [
+        "Public satisfaction score tracking over time",
+        "Correlates sentiment shifts with specific operational events"
+      ]}
+    ]
+  },
+  {
+    id: "haris", name: "Haris", role: "System Health", badge: "",
+    groups: [
+      { label: "Feed integrity", sublabel: null, tasks: [
+        "External entity feeds monitored for late, missing, or dropped connections.",
+        "Internal agent sources monitored: camera streams, AVL sensors and passenger counters.",
+        "Stale feed detection: source appears online but data has stopped updating."
+      ]},
+      { label: "Data discrepancy", sublabel: null, tasks: [
+        "Inconsistencies between data sources flagged, for example two entities reporting conflicting values for the same event.",
+        "Implausible or anomalous values detected before reaching operational agents, for example impossible GPS coordinates or zero passenger counts during peak hours."
+      ]}
+    ]
+  },
+  {
+    id: "muneera", name: "Muneera", role: "Reporting & Performance Intelligence", badge: "",
+    groups: [
+      { label: "Reporting", sublabel: null, tasks: [
+        "Generates live operational reports on demand from any agent or all agents combined",
+        "Produces shift summaries covering alerts, incidents, fleet performance and public sentiment",
+        "Delivers scheduled reports to GTC leadership without manual input"
+      ]},
+      { label: "Open question", sublabel: "Unresolved. Decision point before build.", warning: true, tasks: [
+        "There is an open question about whether Muneera as a reporting agent is the right architectural choice. An alternative direction raised during design: reporting as a conversational capability built into the C&C chat interface, where operators tag agents directly — @Rashid how many ghost buses on Route 7 today? or @all give me a status summary, and each agent responds in context. Under that model, Muneera becomes redundant and reporting is distributed across all agents rather than centralized. This has not been resolved yet."
+      ]}
+    ]
+  }
+];
+
+let state = JSON.parse(JSON.stringify(AGENTS));
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+function render() {
+  const board = document.getElementById("canvas-inner");
+  board.innerHTML = "";
+  state.forEach((agent, ai) => {
+    const col = document.createElement("div");
+    col.className = "agent-col " + agent.id;
+    const header = document.createElement("div");
+    header.className = "agent-header";
+    header.innerHTML = "<div class='agent-name'>" + agent.name + "</div><div class='agent-role'>" + agent.role + "</div>";
+    col.appendChild(header);
+    const list = document.createElement("div");
+    list.className = "task-list";
+    agent.groups.forEach((group, gi) => {
+      const label = document.createElement("div");
+      label.className = "task-group-label";
+      label.innerHTML = group.label;
+      if (group.sublabel) {
+        label.innerHTML += "<span style='display:block;font-size:10px;font-weight:400;color:#555560;text-transform:none;letter-spacing:0;margin-top:2px;'>" + group.sublabel + "</span>";
+      }
+      list.appendChild(label);
+      group.tasks.forEach((task, ti) => {
+        const item = document.createElement("div");
+        item.className = "task-item" + (group.warning ? " warning-task" : "");
+        const dot = document.createElement("div");
+        dot.className = "task-dot";
+        const text = document.createElement("div");
+        text.className = "task-text";
+        text.textContent = task;
+        item.appendChild(dot);
+        item.appendChild(text);
+        list.appendChild(item);
+      });
+    });
+    col.appendChild(list);
+
+    board.appendChild(col);
+  });
+}
+
+
+
+render();
+</script>
+</body>
+</html>
